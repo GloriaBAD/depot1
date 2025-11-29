@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../services/supabase';
-import type { User } from '@supabase/supabase-js';
+import { authService } from '../services/api';
 
 type Profile = {
-  id: string;
+  id: number;
   username: string;
+  email: string;
   full_name?: string;
   avatar_url?: string;
   bio?: string;
@@ -12,10 +12,12 @@ type Profile = {
   rating: number;
   problems_solved: number;
   contests_participated: number;
+  created_at: string;
+  updated_at: string;
 };
 
 type AuthContextType = {
-  user: User | null;
+  user: Profile | null;
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, username: string, fullName: string) => Promise<void>;
@@ -27,90 +29,56 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (!error && data) {
-      setProfile(data);
-    }
-  };
-
   const refreshProfile = async () => {
-    if (user) {
-      await loadProfile(user.id);
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
     }
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+    }
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, username: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const response = await authService.register({
       email,
       password,
-      options: {
-        data: {
-          username,
-          full_name: fullName,
-        },
-      },
+      username,
+      full_name: fullName,
     });
 
-    if (error) throw error;
-    if (data.user) {
-      setUser(data.user);
-      await loadProfile(data.user.id);
+    if (response.user) {
+      setUser(response.user);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const response = await authService.login(email, password);
 
-    if (error) throw error;
-    if (data.user) {
-      setUser(data.user);
-      await loadProfile(data.user.id);
+    if (response.user) {
+      setUser(response.user);
     }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    authService.logout();
     setUser(null);
-    setProfile(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile: user, loading, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -30,19 +30,19 @@ export default function ProfilePage({ onNavigate }: ProfilePageProps) {
       setLoading(true);
       const [submissionsData, leaderboardData] = await Promise.all([
         submissionService.getMySubmissions(10),
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/leaderboard_view?select=*`, {
+        fetch(`${import.meta.env.VITE_API_URL}/leaderboard`, {
           headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
         }).then(res => res.json()),
       ]);
 
       setSubmissions(submissionsData || []);
 
-      const userRank = leaderboardData.find((entry: any) => entry.id === user?.id);
-      if (userRank) {
-        setRank(userRank.rank);
+      const userIndex = leaderboardData.findIndex((entry: any) => entry.id === user?.id);
+      if (userIndex !== -1) {
+        setRank(userIndex + 1);
       }
     } catch (error) {
       console.error('Error loading profile data:', error);

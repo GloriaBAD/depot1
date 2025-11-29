@@ -1,76 +1,18 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: codearena-postgres
-    environment:
-      POSTGRES_DB: codearena
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - codearena-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: codearena-backend
-    environment:
-      PORT: 5000
-      NODE_ENV: production
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: codearena
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      JWT_EXPIRE: 7d
-      CORS_ORIGIN: http://localhost:3000
-    ports:
-      - "5000:5000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - codearena-network
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./sandbox:/app/sandbox:ro
-      - sandbox_tmp:/app/sandbox_tmp
-    command: sh -c "sleep 10 && npm run migrate && npm run seed && npm start"
-    privileged: true
-
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: https://nvanwnromnybqlkizxer.supabase.co
+        VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52YW53bnJvbW55YnFsa2l6eGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyMzk3NTUsImV4cCI6MjA3OTgxNTc1NX0.sivgvgPurguA8wNlAV-NUKkMY7Vtmk6TzozVHKPQwtE
     container_name: codearena-frontend
-    environment:
-      VITE_API_URL: http://localhost:5000/api
     ports:
       - "3000:80"
-    depends_on:
-      - backend
     networks:
       - codearena-network
-
-volumes:
-  postgres_data:
-    driver: local
-  sandbox_tmp:
-    driver: local
 
 networks:
   codearena-network:

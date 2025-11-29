@@ -137,12 +137,14 @@ export default function ContestsPage({ onNavigate }: ContestsPageProps) {
           {filteredContests.map((contest) => (
             <ContestCard
               key={contest.id}
+              id={contest.id}
               title={contest.title}
               description={contest.description}
               startDate={contest.startDate}
               duration={contest.duration}
               participants={contest.participants}
               status={contest.status}
+              onNavigate={onNavigate}
               onClick={() => {
                 alert(`Détails du concours: ${contest.title}`);
               }}

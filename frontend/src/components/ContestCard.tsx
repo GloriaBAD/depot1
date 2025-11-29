@@ -1,6 +1,7 @@
 import { Calendar, Users, Trophy } from 'lucide-react';
 
 interface ContestCardProps {
+  id?: number;
   title: string;
   description: string;
   startDate: string;
@@ -8,16 +9,19 @@ interface ContestCardProps {
   participants: number;
   status: 'upcoming' | 'active' | 'completed';
   onClick?: () => void;
+  onNavigate?: (page: string, id?: string) => void;
 }
 
 export default function ContestCard({
+  id,
   title,
   description,
   startDate,
   duration,
   participants,
   status,
-  onClick
+  onClick,
+  onNavigate
 }: ContestCardProps) {
   const statusColors = {
     'upcoming': 'bg-blue-100 text-blue-700',
@@ -67,7 +71,9 @@ export default function ContestCard({
         onClick={(e) => {
           e.stopPropagation();
           if (status === 'active') {
-            alert('Redirection vers la salle de concours...');
+            if (onNavigate) {
+              onNavigate('contest-room', id?.toString());
+            }
           } else if (status === 'upcoming') {
             alert('Inscription réussie! Vous recevrez une notification avant le début.');
           } else {

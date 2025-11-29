@@ -1,12 +1,13 @@
 import { Mail, Lock } from 'lucide-react';
 import { useState } from 'react';
-import { authService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function LoginPage({ onNavigate }: LoginPageProps) {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,7 +19,7 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     setLoading(true);
 
     try {
-      await authService.login(email, password);
+      await signIn(email, password);
       onNavigate('home');
     } catch (err: any) {
       setError(err.message || 'Erreur de connexion');

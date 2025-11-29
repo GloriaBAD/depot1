@@ -1,13 +1,22 @@
 import { User, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   currentPage?: string;
-  isAuthenticated?: boolean;
   onNavigate?: (page: string) => void;
-  onLogout?: () => void;
 }
 
-export default function Header({ currentPage, isAuthenticated, onNavigate, onLogout }: HeaderProps) {
+export default function Header({ currentPage, onNavigate }: HeaderProps) {
+  const { user, profile, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      onNavigate?.('home');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -49,18 +58,19 @@ export default function Header({ currentPage, isAuthenticated, onNavigate, onLog
           </div>
 
           <div className="flex items-center gap-3">
-            {isAuthenticated ? (
+            {user ? (
               <>
                 <button
                   onClick={() => onNavigate?.('profile')}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
                 >
                   <User size={18} />
-                  <span>Profil</span>
+                  <span>{profile?.username || 'Profil'}</span>
                 </button>
                 <button
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  title="Déconnexion"
                 >
                   <LogOut size={18} />
                 </button>

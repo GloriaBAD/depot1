@@ -1,12 +1,17 @@
-import { Play, ChevronDown, ArrowLeft, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Play, ChevronDown, ArrowLeft, CheckCircle, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
+import { submissionService, problemService } from '../services/api';
 
 interface SubmissionPageProps {
   onNavigate: (page: string) => void;
+  problemSlug?: string;
 }
 
-export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
+export default function SubmissionPage({ onNavigate, problemSlug = 'two-sum' }: SubmissionPageProps) {
+  const { user, refreshProfile } = useAuth();
+  const [problem, setProblem] = useState<any>(null);
   const [code, setCode] = useState(`def twoSum(nums, target):
     hash_map = {}
     for i, num in enumerate(nums):
@@ -19,6 +24,27 @@ export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
   const [language, setLanguage] = useState('python');
   const [testResults, setTestResults] = useState<any>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      onNavigate('login');
+      return;
+    }
+    loadProblem();
+  }, [user, problemSlug]);
+
+  const loadProblem = async () => {
+    try {
+      const data = await problemService.getBySlug(problemSlug);
+      setProblem(data);
+    } catch (error) {
+      console.error('Error loading problem:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRun = () => {
     setIsSubmitted(false);
@@ -33,9 +59,50 @@ export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
     });
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    if (!problem || !user) return;
+
+    setSubmitting(true);
+    try {
+      const result = await submissionService.submit(problem.id, code, language);
+
+      setIsSubmitted(true);
+      setTestResults({
+        status: result.status,
+        execution_time: result.execution_time,
+        memory_used: result.memory_used,
+      });
+
+      await refreshProfile();
+    } catch (error: any) {
+      console.error('Error submitting:', error);
+      alert('Erreur lors de la soumission: ' + error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header currentPage="problems" onNavigate={onNavigate} />
+        <div className="flex items-center justify-center h-96">
+          <Loader className="animate-spin text-blue-600" size={40} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header currentPage="problems" onNavigate={onNavigate} />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-gray-600">Problème non trouvé</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -45,54 +112,40 @@ export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Two Sum</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{problem.title}</h2>
               <div className="flex items-center gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                  Facile
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  problem.difficulty === 'Facile' ? 'bg-green-100 text-green-700' :
+                  problem.difficulty === 'Moyen' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {problem.difficulty}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                  Tableaux
+                  {problem.category}
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                  {problem.points} points
                 </span>
               </div>
             </div>
 
             <div className="px-6 py-4 max-h-[600px] overflow-y-auto">
               <h3 className="font-semibold text-gray-900 mb-3">Description</h3>
-              <p className="text-gray-700 mb-4">
-                Étant donné un tableau d'entiers <code className="px-2 py-1 bg-gray-100 rounded text-sm">nums</code> et
-                un entier <code className="px-2 py-1 bg-gray-100 rounded text-sm">target</code>,
-                retournez les indices des deux nombres tels que leur somme est égale à <code className="px-2 py-1 bg-gray-100 rounded text-sm">target</code>.
-              </p>
-
-              <h3 className="font-semibold text-gray-900 mb-3">Exemple 1</h3>
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 font-mono text-sm">
-                <div className="text-gray-700">
-                  <span className="text-gray-600">Input:</span> nums = [2,7,11,15], target = 9
-                </div>
-                <div className="text-gray-700">
-                  <span className="text-gray-600">Output:</span> [0,1]
-                </div>
-                <div className="text-gray-600 mt-2">
-                  Explication: nums[0] + nums[1] = 2 + 7 = 9
-                </div>
+              <div className="text-gray-700 mb-4 whitespace-pre-line">
+                {problem.description}
               </div>
 
-              <h3 className="font-semibold text-gray-900 mb-3">Exemple 2</h3>
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 font-mono text-sm">
-                <div className="text-gray-700">
-                  <span className="text-gray-600">Input:</span> nums = [3,2,4], target = 6
-                </div>
-                <div className="text-gray-700">
-                  <span className="text-gray-600">Output:</span> [1,2]
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600 mb-2">Statistiques</div>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-gray-700">Taux de réussite: {problem.acceptance_rate}%</span>
+                  <span>•</span>
+                  <span className="text-gray-700">{problem.solved_count} solutions</span>
+                  <span>•</span>
+                  <span className="text-gray-700">{problem.total_submissions} soumissions</span>
                 </div>
               </div>
-
-              <h3 className="font-semibold text-gray-900 mb-3">Contraintes</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                <li>2 ≤ nums.length ≤ 10⁴</li>
-                <li>-10⁹ ≤ nums[i] ≤ 10⁹</li>
-                <li>-10⁹ ≤ target ≤ 10⁹</li>
-              </ul>
             </div>
           </div>
 
@@ -139,33 +192,35 @@ export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
             {isSubmitted ? (
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div className="p-8 text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="text-green-600" size={32} />
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    testResults?.status === 'accepted' ? 'bg-green-100' : 'bg-red-100'
+                  }`}>
+                    <CheckCircle className={testResults?.status === 'accepted' ? 'text-green-600' : 'text-red-600'} size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Solution soumise avec succès!</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    {testResults?.status === 'accepted' ? 'Solution acceptée !' : 'Solution rejetée'}
+                  </h3>
                   <p className="text-gray-600 mb-6">
-                    Votre solution a été acceptée et vous avez gagné <strong>100 points</strong>
+                    {testResults?.status === 'accepted'
+                      ? `Votre solution a été acceptée et vous avez gagné ${problem.points} points !`
+                      : 'Votre solution ne passe pas tous les tests. Réessayez !'}
                   </p>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600">Score</div>
-                      <div className="text-2xl font-bold text-gray-900">100/100</div>
+                      <div className="text-sm text-gray-600">Temps d'exécution</div>
+                      <div className="text-2xl font-bold text-gray-900">{testResults?.execution_time}ms</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600">Temps</div>
-                      <div className="text-2xl font-bold text-gray-900">45ms</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm text-gray-600">Rang</div>
-                      <div className="text-2xl font-bold text-gray-900">Top 5%</div>
+                      <div className="text-sm text-gray-600">Mémoire utilisée</div>
+                      <div className="text-2xl font-bold text-gray-900">{(testResults?.memory_used / 1000).toFixed(1)} KB</div>
                     </div>
                   </div>
                   <button
-                    onClick={() => onNavigate('problems')}
+                    onClick={() => onNavigate(testResults?.status === 'accepted' ? 'profile' : 'problems')}
                     className="flex items-center gap-2 px-6 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors mx-auto"
                   >
                     <ArrowLeft size={20} />
-                    Retour aux problèmes
+                    {testResults?.status === 'accepted' ? 'Voir mon profil' : 'Retour aux problèmes'}
                   </button>
                 </div>
               </div>
@@ -216,9 +271,10 @@ export default function SubmissionPage({ onNavigate }: SubmissionPageProps) {
                 <div className="border-t border-gray-200 px-6 py-4">
                   <button
                     onClick={handleSubmit}
-                    className="w-full px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={submitting}
+                    className="w-full px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Soumettre la solution
+                    {submitting ? 'Soumission en cours...' : 'Soumettre la solution'}
                   </button>
                 </div>
               </div>

@@ -1,12 +1,13 @@
 import { Mail, Lock, User } from 'lucide-react';
 import { useState } from 'react';
-import { authService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterPageProps {
   onNavigate: (page: string) => void;
 }
 
 export default function RegisterPage({ onNavigate }: RegisterPageProps) {
+  const { signUp } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -32,7 +33,7 @@ export default function RegisterPage({ onNavigate }: RegisterPageProps) {
     setLoading(true);
 
     try {
-      await authService.register({ username, email, password, full_name: fullName });
+      await signUp(email, password, username, fullName);
       onNavigate('home');
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création du compte');

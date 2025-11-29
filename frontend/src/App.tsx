@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AuthProvider } from './contexts/AuthContext';
 import HomePage from './pages/HomePage';
 import ProblemsPage from './pages/ProblemsPage';
 import SubmissionPage from './pages/SubmissionPage';
@@ -10,15 +11,9 @@ import RegisterPage from './pages/RegisterPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentPage('home');
   };
 
   const renderPage = () => {
@@ -44,7 +39,11 @@ function App() {
     }
   };
 
-  return <>{renderPage()}</>;
+  return (
+    <AuthProvider>
+      {renderPage()}
+    </AuthProvider>
+  );
 }
 
 export default App;

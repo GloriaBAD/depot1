@@ -16,24 +16,6 @@ class CodeExecutionService {
       image: 'codearena-sandbox-python',
       extension: 'py',
       command: (file) => `python3 ${file}`
-    },
-    javascript: {
-      image: 'codearena-sandbox-javascript',
-      extension: 'js',
-      command: (file) => `node ${file}`
-    },
-    java: {
-      image: 'codearena-sandbox-java',
-      extension: 'java',
-      command: (file) => {
-        const className = path.basename(file, '.java');
-        return `javac ${file} && java ${className}`;
-      }
-    },
-    cpp: {
-      image: 'codearena-sandbox-cpp',
-      extension: 'cpp',
-      command: (file) => `g++ ${file} -o /tmp/program && /tmp/program`
     }
   };
 
@@ -188,30 +170,27 @@ class CodeExecutionService {
   }
 
   static async buildImages() {
-    const languages = ['python', 'javascript', 'java', 'cpp'];
     const sandboxDir = path.join(process.cwd(), 'sandbox');
 
-    console.log('Building Docker sandbox images...');
+    console.log('Building Docker sandbox image...');
 
-    for (const lang of languages) {
-      try {
-        const dockerfilePath = path.join(sandboxDir, `Dockerfile.${lang}`);
-        const imageName = `codearena-sandbox-${lang}`;
+    try {
+      const dockerfilePath = path.join(sandboxDir, 'Dockerfile.python');
+      const imageName = 'codearena-sandbox-python';
 
-        console.log(`Building ${imageName}...`);
+      console.log(`Building ${imageName}...`);
 
-        await execAsync(
-          `docker build -f ${dockerfilePath} -t ${imageName} ${sandboxDir}`,
-          { timeout: 300000 }
-        );
+      await execAsync(
+        `docker build -f ${dockerfilePath} -t ${imageName} ${sandboxDir}`,
+        { timeout: 300000 }
+      );
 
-        console.log(`✓ ${imageName} built successfully`);
-      } catch (error) {
-        console.error(`✗ Failed to build ${lang} image:`, error.message);
-      }
+      console.log(`✓ ${imageName} built successfully`);
+    } catch (error) {
+      console.error(`✗ Failed to build Python image:`, error.message);
     }
 
-    console.log('Docker sandbox images ready');
+    console.log('Docker sandbox image ready');
   }
 }
 

@@ -1,24 +1,20 @@
 #!/bin/bash
 
-echo "Building CodeArena Docker Sandbox Images..."
+echo "Building CodeArena Docker Sandbox Image..."
 echo ""
 
-languages=("python" "javascript" "java" "cpp")
+echo "Building codearena-sandbox-python..."
+docker build -f Dockerfile.python -t codearena-sandbox-python .
 
-for lang in "${languages[@]}"; do
-  echo "Building codearena-sandbox-${lang}..."
-  docker build -f Dockerfile.${lang} -t codearena-sandbox-${lang} .
+if [ $? -eq 0 ]; then
+  echo "✓ codearena-sandbox-python built successfully"
+else
+  echo "✗ Failed to build codearena-sandbox-python"
+  exit 1
+fi
 
-  if [ $? -eq 0 ]; then
-    echo "✓ codearena-sandbox-${lang} built successfully"
-  else
-    echo "✗ Failed to build codearena-sandbox-${lang}"
-    exit 1
-  fi
-  echo ""
-done
-
-echo "All Docker sandbox images built successfully!"
 echo ""
-echo "Available images:"
-docker images | grep codearena-sandbox
+echo "Docker sandbox image built successfully!"
+echo ""
+echo "Available image:"
+docker images | grep codearena-sandbox-python

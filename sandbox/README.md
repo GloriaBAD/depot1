@@ -1,15 +1,12 @@
 # CodeArena Docker Sandbox
 
-Ce dossier contient les configurations Docker pour exécuter du code de manière sécurisée et isolée.
+Ce dossier contient la configuration Docker pour exécuter du code Python de manière sécurisée et isolée.
 
 ## Architecture
 
-Le système utilise Docker pour créer des environnements d'exécution isolés pour chaque langage :
+Le système utilise Docker pour créer un environnement d'exécution isolé :
 
 - **Python** : Image basée sur `python:3.11-alpine`
-- **JavaScript** : Image basée sur `node:20-alpine`
-- **Java** : Image basée sur `openjdk:17-alpine`
-- **C++** : Image basée sur `gcc:13-bookworm`
 
 ## Sécurité
 
@@ -23,7 +20,7 @@ Chaque conteneur est configuré avec :
 - **Système de fichiers en lecture seule** avec `/tmp` writable uniquement
 - **Timeout** : 10 secondes max par exécution
 
-## Construction des images
+## Construction de l'image
 
 ```bash
 cd sandbox
@@ -34,33 +31,15 @@ Ou manuellement :
 
 ```bash
 docker build -f Dockerfile.python -t codearena-sandbox-python .
-docker build -f Dockerfile.javascript -t codearena-sandbox-javascript .
-docker build -f Dockerfile.java -t codearena-sandbox-java .
-docker build -f Dockerfile.cpp -t codearena-sandbox-cpp .
 ```
 
-## Test des exemples
+## Test de l'exemple
 
-Les fichiers d'exemple dans `test-examples/` montrent comment écrire du code pour chaque langage.
+Le fichier d'exemple dans `test-examples/test_python.py` montre comment écrire du code Python.
 
 ### Python
 ```bash
 echo "5 3" | docker run -i --rm codearena-sandbox-python python3 -c "a,b=map(int,input().split());print(a+b)"
-```
-
-### JavaScript
-```bash
-echo "5 3" | docker run -i --rm codearena-sandbox-javascript node -e "require('readline').createInterface({input:process.stdin}).on('line',l=>{const[a,b]=l.split(' ').map(Number);console.log(a+b);process.exit()})"
-```
-
-### Java
-```bash
-docker run -i --rm codearena-sandbox-java sh -c "echo 'import java.util.Scanner;public class Main{public static void main(String[]args){Scanner s=new Scanner(System.in);System.out.println(s.nextInt()+s.nextInt());}}' > Main.java && javac Main.java && echo '5 3' | java Main"
-```
-
-### C++
-```bash
-docker run -i --rm codearena-sandbox-cpp sh -c "echo '#include<iostream>\\nusing namespace std;\\nint main(){int a,b;cin>>a>>b;cout<<a+b<<endl;}' > test.cpp && g++ test.cpp -o test && echo '5 3' | ./test"
 ```
 
 ## Utilisation dans le backend

@@ -46,7 +46,11 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sandbox:/app/sandbox:ro
+      - sandbox_tmp:/app/sandbox_tmp
     command: sh -c "sleep 10 && npm run migrate && npm run seed && npm start"
+    privileged: true
 
   frontend:
     build:
@@ -64,6 +68,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  sandbox_tmp:
     driver: local
 
 networks:

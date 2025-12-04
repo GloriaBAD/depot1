@@ -1,6 +1,26 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: codearena-postgres
+    environment:
+      POSTGRES_DB: codearena
+      POSTGRES_USER: codearena_user
+      POSTGRES_PASSWORD: codearena_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - codearena-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codearena_user -d codearena"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   frontend:
     build:
       context: ./frontend
@@ -13,6 +33,9 @@ services:
       - "3000:80"
     networks:
       - codearena-network
+
+volumes:
+  postgres_data:
 
 networks:
   codearena-network:

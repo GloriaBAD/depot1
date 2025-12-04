@@ -10,8 +10,7 @@ services:
         VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52YW53bnJvbW55YnFsa2l6eGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyMzk3NTUsImV4cCI6MjA3OTgxNTc1NX0.sivgvgPurguA8wNlAV-NUKkMY7Vtmk6TzozVHKPQwtE
     container_name: codearena-frontend
     ports:
-      - "195.15.202.76:80:80"
-    restart: unless-stopped
+      - "3000:80"
     networks:
       - codearena-network
 

@@ -5,22 +5,24 @@ export const authService = {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
+      options: {
+        data: {
+          username: userData.username,
+          full_name: userData.full_name,
+        },
+      },
     });
 
     if (authError) throw authError;
     if (!authData.user) throw new Error('Registration failed');
 
-    const { error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
-      .insert({
-        id: authData.user.id,
-        username: userData.username,
-        full_name: userData.full_name,
-      });
+      .select('*')
+      .eq('id', authData.user.id)
+      .maybeSingle();
 
-    if (profileError) throw profileError;
-
-    return { user: authData.user };
+    return { user: profile };
   },
 
   async login(email: string, password: string) {
@@ -30,7 +32,14 @@ export const authService = {
     });
 
     if (error) throw error;
-    return { user: data.user };
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    return { user: profile };
   },
 
   async logout() {
